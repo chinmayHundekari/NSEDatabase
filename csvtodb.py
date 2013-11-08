@@ -121,7 +121,7 @@ def obtainQuotesList(Symbols):
 			rows = cur.fetchall()
 			nprow = {}
 			for row in rows:
-				colnum = 0 
+				colnum = 0  
 				for col in row:
 					if colnum == 1:
 						date = convertDate(col)
