@@ -8,7 +8,21 @@ getbhav.py
 
 Usage:
 
-    python getbhav.py
+    python getbhav.py -getAll 
+
+Downloads bhav copy from 2001 to 2013
+
+    python getbhav.py -getYear [year]
+    
+Downloads bhav copy for one year
+
+    python getbhav.py -getMonth [month] [year]
+
+Downloads bhav copy for one month
+
+Example:
+
+    python getbhav.py -getMonth JAN 2013
 
 
 csvtodb.py
