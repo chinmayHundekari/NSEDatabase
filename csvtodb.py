@@ -1,3 +1,6 @@
+#Copyright (c) 2013 Chinmay Hundekari
+#See the file license.txt for copying permission.
+
 import sqlite3
 import csv
 import sys
