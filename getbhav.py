@@ -73,7 +73,7 @@ def _printUsage():
 def main(args):
 	if args:
 		if args[0] == "-getAll":
-			getAll(args[1])
+			getAll()
 		elif args[0] == "-getYear":
 			getYear(args[1])
 		elif args[0] == "-getMonth":
