@@ -159,7 +159,7 @@ def main(args):
 		if args[0] == "-get":
 			Datframe = obtainQuotes(args[1])
 			print Datframe[:30]
-		if args[0] == "-getMany":
+		elif args[0] == "-getMany":
 			Datframe = obtainQuotesList(args[1:])
 			print Datframe[args[1]][:10]
 		elif args[0] == "-add":
