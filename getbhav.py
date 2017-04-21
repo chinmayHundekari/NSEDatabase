@@ -44,7 +44,7 @@ class nseConnect:
             return -1
         elif response.status != 200:
             print "Response status is %s \tCould not download %s." % (response.status, reqstr)
-            print "%s" % (data)
+            print "%s" % (self.data)
             return -1
 
 def downloadCSV(c, year="2013",mon="NOV",dd="06"):
