@@ -10,7 +10,7 @@ Usage:
 
     python getbhav.py -getAll 
 
-Downloads bhav copy from 2001 to 2013
+Downloads bhav copy from 2016 onwards
 
     python getbhav.py -getYear [year]
     
@@ -22,7 +22,7 @@ Downloads bhav copy for one month
 
 Example:
 
-    python getbhav.py -getMonth JAN 2013
+    python getbhav.py -getMonth 02 2017
 
 
 csvtodb.py
@@ -45,3 +45,12 @@ Get data for Symbols
     python csvtodb.py -get [Symbol]
 
 Get data for Symbol
+
+report.py
+=========
+
+Usage:
+
+    python report.py -posGain 5 20 > posGain.csv
+
+Generates a sorted report of all scripts which have moved positively in last 5 days and also provides movement over last 20 days    
