@@ -9,45 +9,52 @@ import httplib, StringIO, zipfile
 import os
 import sys
 
-def check_redirect(url):
-    response = requests.head(url)
-    if response.status_code == 302:
-        url = response.headers["Location"]
-    return url
-
-def downloadCSV(year="2013",mon="NOV",dd="06"):
+class nseConnect:
     headers = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36',
                'Accept':'application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
                'Accept-Encoding':'gzip,deflate,sdch',
                'Referer':'http://www.nseindia.com/archives/archives.htm'}
-    filename = "cm%s%s%sbhav.csv" % (dd,mon,year)
     url = "www.nseindia.com"
+
+    def connect(self):
+        response = requests.head('http://' + self.url)
+        if response.status_code == 302:
+            self.url = response.headers["Location"]
+        isHttps = self.url.find("https") > -1
+        self.url = self.url[self.url.find("//")+2:self.url.rfind("/")]
+        if isHttps:
+            self.conn = httplib.HTTPSConnection(self.url)
+        else:
+            self.conn = httplib.HTTPConnection(self.url)
+
+    def disconnect(self):
+        self.conn.close()
+
+    def getResponse(self, reqstr):
+        c = self.conn
+        c.request("GET", reqstr, None, self.headers)
+        response = c.getresponse()
+        self.data = response.read()
+        if response.status == 403:
+            print "Response status is %s\tCould not download %s." % (response.status, reqstr)
+            print "%s" % (self.data)
+            return -1
+        elif response.status == 404:
+            print "File not found\tCould not download %s." % (reqstr)
+            return -1
+        elif response.status != 200:
+            print "Response status is %s \tCould not download %s." % (response.status, reqstr)
+            print "%s" % (data)
+            return -1
+
+def downloadCSV(c, year="2013",mon="NOV",dd="06"):
+    filename = "cm%s%s%sbhav.csv" % (dd,mon,year)
     reqstr = "/content/historical/EQUITIES/%s/%s/%s.zip" % (year, mon, filename)
 
-    url = check_redirect('http://' + url)
-    isHttps = url.find("https") > -1
-    url = url[url.find("//")+2:url.rfind("/")]
-    print url
-    if isHttps:
-        conn = httplib.HTTPSConnection(url)
-    else:
-        conn = httplib.HTTPConnection(url)
     print "Downloading %s ..." % (filename)
-    conn.request("GET", reqstr, None, headers)
-    response = conn.getresponse()
-    data = response.read()
-    if response.status == 403:
-        print "Response status is %s\tCould not download %s." % (response.status, filename)
-        print "%s" % (data)
+    if c.getResponse(reqstr) == -1:
         return -1
-    elif response.status == 404:
-        print "File not found\tCould not download %s." % (filename)
-        return -1
-    elif response.status != 200:
-        print "Response status is %s \tCould not download %s." % (response.status, filename)
-        print "%s" % (data)
-        return -1
-    sdata = StringIO.StringIO(data)
+    sdata = StringIO.StringIO(c.data)
     z = zipfile.ZipFile(sdata)
     try:
         csv = z.read(z.namelist()[0])
@@ -65,40 +72,40 @@ def downloadCSV(year="2013",mon="NOV",dd="06"):
         fil.close()
         return 1
 
-def downloadCSVDate(date):
+def downloadCSVDate(c, date):
     year = date.strftime("%Y")
     mon = date.strftime("%b").upper()
     d = date.strftime("%d")
-    return downloadCSV(year,mon,d)
+    return downloadCSV(c, year,mon,d)
 
-def getAll():
+def getAll(c):
     errContinous = 0
     d = datetime.date.today()
     decr = datetime.timedelta(days=1)
     while errContinous > -30:
-        if downloadCSVDate(d) > -1:
+        if downloadCSVDate(c, d) > -1:
             errContinous = 0
         else:
             errContinous -= 1
         d -= decr
 
-def getYear(year):
+def getYear(c, year):
     errContinous = 0
     d = datetime.date(int(year), 12, 31)
     decr = datetime.timedelta(days=1)
     while (errContinous > -30 and d.strftime("%Y") == year):
-        if downloadCSVDate(d) > -1:
+        if downloadCSVDate(c, d) > -1:
             errContinous = 0
         else:
             errContinous -= 1
         d -= decr
 
-def getMonth(mon, year):
+def getMonth(c, mon, year):
     errContinous = 0
     decr = datetime.timedelta(days=1)
     d = datetime.date(int(year), int(mon), 1) + relativedelta(months=+1) - decr
     while errContinous > -30 and d.strftime("%Y") == year and d.strftime("%m") == mon:
-        if downloadCSVDate(d) > -1:
+        if downloadCSVDate(c, d) > -1:
             errContinous = 0
         else:
             errContinous -= 1
@@ -112,17 +119,20 @@ def _printUsage():
     print "\tExample:\n\t\tpython getbhav.py -getMonth 02 2013"
 
 def main(args):
+    c = nseConnect()
+    c.connect()
     if args:
         if args[0] == "-getAll":
-            getAll()
+            getAll(c)
         elif args[0] == "-getYear":
-            getYear(args[1])
+            getYear(c, args[1])
         elif args[0] == "-getMonth":
-            getMonth(args[1], args[2])
+            getMonth(c, args[1], args[2])
         else:
             _printUsage()
     else:
-        downloadCSVDate(datetime.date.today())
+        downloadCSVDate(c, datetime.date.today())
+    c.disconnect()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
