@@ -51,6 +51,6 @@ report.py
 
 Usage:
 
-    python report.py -posGain 5 20 > posGain.csv
+    python report.py -posGain 5 20
 
 Generates a sorted report of all scripts which have moved positively in last 5 days and also provides movement over last 20 days    
