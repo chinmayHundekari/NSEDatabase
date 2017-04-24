@@ -30,6 +30,20 @@ class nseConnect:
     def disconnect(self):
         self.conn.close()
 
+    def getFilename(self, date):
+        [y, m, d] = self.convertDate(date)
+        return "cm%s%s%sbhav.csv" % (d, m, y)
+
+    def convertDate(self, date):
+        y = date.strftime("%Y")
+        m = date.strftime("%b").upper()
+        d = date.strftime("%d")
+        return [y, m, d]
+
+    def getReqStr(self, date):
+        [y, m, d] = self.convertDate(date)
+        return "/content/historical/EQUITIES/%s/%s/%s.zip" % (y, m, self.getFilename(date))
+
     def getResponse(self, reqstr):
         c = self.conn
         c.request("GET", reqstr, None, self.headers)
@@ -47,9 +61,9 @@ class nseConnect:
             print "%s" % (self.data)
             return -1
 
-def downloadCSV(c, year="2013",mon="NOV",dd="06"):
-    filename = "cm%s%s%sbhav.csv" % (dd,mon,year)
-    reqstr = "/content/historical/EQUITIES/%s/%s/%s.zip" % (year, mon, filename)
+def downloadCSV(c, d):
+    filename = c.getFilename(d)
+    reqstr = c.getReqStr(d)
 
     print "Downloading %s ..." % (filename)
     if c.getResponse(reqstr) == -1:
@@ -73,17 +87,26 @@ def downloadCSV(c, year="2013",mon="NOV",dd="06"):
         return 1
 
 def downloadCSVDate(c, date):
-    year = date.strftime("%Y")
-    mon = date.strftime("%b").upper()
-    d = date.strftime("%d")
-    return downloadCSV(c, year,mon,d)
+    [y, m, d] = convertDate(date)
+    return downloadCSV(c, y, m, d)
+
+def getUpdate(c):
+    errContinous = 0
+    d = datetime.date.today()
+    decr = datetime.timedelta(days=1)
+    while errContinous > -30 and (not os.path.exists(os.path.join("data",c.getFilename(d)))):
+        if downloadCSV(c, d) > -1:
+            errContinous = 0
+        else:
+            errContinous -= 1
+        d -= decr
 
 def getAll(c):
     errContinous = 0
     d = datetime.date.today()
     decr = datetime.timedelta(days=1)
     while errContinous > -30:
-        if downloadCSVDate(c, d) > -1:
+        if downloadCSV(c, d) > -1:
             errContinous = 0
         else:
             errContinous -= 1
@@ -94,7 +117,7 @@ def getYear(c, year):
     d = datetime.date(int(year), 12, 31)
     decr = datetime.timedelta(days=1)
     while (errContinous > -30 and d.strftime("%Y") == year):
-        if downloadCSVDate(c, d) > -1:
+        if downloadCSV(c, d) > -1:
             errContinous = 0
         else:
             errContinous -= 1
@@ -105,7 +128,7 @@ def getMonth(c, mon, year):
     decr = datetime.timedelta(days=1)
     d = datetime.date(int(year), int(mon), 1) + relativedelta(months=+1) - decr
     while errContinous > -30 and d.strftime("%Y") == year and d.strftime("%m") == mon:
-        if downloadCSVDate(c, d) > -1:
+        if downloadCSV(c, d) > -1:
             errContinous = 0
         else:
             errContinous -= 1
@@ -113,7 +136,8 @@ def getMonth(c, mon, year):
 
 def _printUsage():
     print "Usage:"
-    print "python getbhav.py -getAll \n\tDownloads bhav copy from 2001 to 2013"
+    print "python getbhav.py -update \n\tUpdates bhav copy till last date found"
+    print "python getbhav.py -getAll \n\tDownloads bhav copy from 2016 onwards"
     print "python getbhav.py -getYear [year]\n\tDownloads bhav copy for one year"
     print "python getbhav.py -getMonth [month] [year]\n\tDownloads bhav copy for one month"
     print "\tExample:\n\t\tpython getbhav.py -getMonth 02 2013"
@@ -122,7 +146,9 @@ def main(args):
     c = nseConnect()
     c.connect()
     if args:
-        if args[0] == "-getAll":
+        if args[0] == "-update":
+            getUpdate(c)
+        elif args[0] == "-getAll":
             getAll(c)
         elif args[0] == "-getYear":
             getYear(c, args[1])
